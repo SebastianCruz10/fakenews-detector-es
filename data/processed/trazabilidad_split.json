@@ -1,0 +1,24 @@
+{
+  "fecha": "2026-06-02T00:35:51.784647+00:00",
+  "semilla": 42,
+  "total_registros": 966,
+  "registros_train": 772,
+  "registros_val": 97,
+  "registros_test": 97,
+  "proporcion_fake_train": 0.493523,
+  "proporcion_fake_val": 0.494845,
+  "proporcion_fake_test": 0.494845,
+  "hash_md5_test": "6ac66ee1821ece0669c685dce514631d",
+  "fuentes_raw": [
+    "train.xlsx",
+    "development.xlsx"
+  ],
+  "columna_texto": "Text",
+  "columna_etiqueta": "Category",
+  "codificacion_etiqueta": {
+    "fake": 1,
+    "true": 0
+  },
+  "eliminados_texto_vacio": 0,
+  "eliminados_duplicados": 5
+}
