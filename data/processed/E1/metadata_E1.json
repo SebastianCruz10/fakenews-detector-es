@@ -1,0 +1,31 @@
+{
+  "escenario": "E1",
+  "descripcion": "Corpus FakeDeS con augmentación sintética +50% clase fake. Dataset E1.",
+  "fecha_construccion": "2026-06-04T19:43:37.383757+00:00",
+  "semilla_mezcla": 42,
+  "fuente_train_base": "data/processed/train.csv",
+  "fuente_sinteticos": "data/processed/augmented_synthetic.csv",
+  "fuente_val": "data/processed/val.csv",
+  "fuente_test": "data/processed/test.csv",
+  "n_train": 957,
+  "n_val": 97,
+  "n_test": 97,
+  "n_fake_train_original": 381,
+  "n_fake_train_sintetico": 185,
+  "n_fake_train_total": 566,
+  "n_true_train": 391,
+  "proporcion_fake_train": 0.5914,
+  "hash_md5_train": "d5949dfe6b3c2f42110b6865895fbebd",
+  "hash_md5_val": "2d22860c2f6cbfeccca34a75f1d356ff",
+  "hash_md5_test": "06697b127fd01b181ff5e50d87a5a2d3",
+  "columnas": [
+    "Text",
+    "Category"
+  ],
+  "modelos_objetivo": [
+    "RoBERTa-BNE",
+    "MarIA"
+  ],
+  "augmentacion_aplicada": true,
+  "tasa_augmentacion": 0.4856
+}
