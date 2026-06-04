@@ -1,0 +1,27 @@
+{
+  "escenario": "E0",
+  "descripcion": "Corpus FakeDeS sin augmentación sintética. Escenario baseline.",
+  "fecha_construccion": "2026-06-04T19:34:20.577029+00:00",
+  "semilla_particion": 42,
+  "fuente_train": "data/processed/train.csv",
+  "fuente_val": "data/processed/val.csv",
+  "fuente_test": "data/processed/test.csv",
+  "n_train": 772,
+  "n_val": 97,
+  "n_test": 97,
+  "n_fake_train": 381,
+  "n_true_train": 391,
+  "proporcion_fake_train": 0.4935,
+  "hash_md5_train": "a6df6b31ce9895550878a7f339b12117",
+  "hash_md5_val": "2d22860c2f6cbfeccca34a75f1d356ff",
+  "hash_md5_test": "06697b127fd01b181ff5e50d87a5a2d3",
+  "columnas": [
+    "Text",
+    "Category"
+  ],
+  "modelos_objetivo": [
+    "RoBERTa-BNE",
+    "MarIA"
+  ],
+  "augmentacion_aplicada": false
+}
