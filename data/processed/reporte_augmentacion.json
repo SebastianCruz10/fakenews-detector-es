@@ -1,0 +1,22 @@
+{
+  "fecha": "2026-06-04T05:58:53.027515+00:00",
+  "modelo_generador": "gpt-4o-mini",
+  "temperatura": 0.7,
+  "top_p": 0.9,
+  "max_tokens": 512,
+  "modelo_embeddings": "paraphrase-multilingual-mpnet-base-v2",
+  "similitud_min": 0.5,
+  "similitud_max": 0.85,
+  "umbral_deduplicacion": 0.95,
+  "semilla": 42,
+  "n_objetivo": 190,
+  "n_generados_total": 782,
+  "n_rechazados_sim_baja": 0,
+  "n_rechazados_sim_alta": 577,
+  "n_rechazados_dedup": 20,
+  "n_aceptados_final": 185,
+  "tasa_aceptacion_global": 0.2366,
+  "tokens_input": 828780,
+  "tokens_output": 317182,
+  "costo_estimado_usd": 0.314626
+}
