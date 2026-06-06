@@ -2,33 +2,45 @@
   "mrbert-es_E0": {
     "modelo": "BSC-LT/MrBERT-es",
     "escenario": "E0",
+    "epocas": 5,
+    "lr": 2e-05,
     "f1_macro": 0.8655,
     "f1_fake": 0.8571,
     "accuracy": 0.866,
-    "recall_fake": 0.8125
+    "recall_fake": 0.8125,
+    "rol": "baseline"
   },
-  "mrbert-es_E1": {
+  "mrbert-es_E1_ep3": {
     "modelo": "BSC-LT/MrBERT-es",
     "escenario": "E1",
-    "f1_macro": 0.876,
-    "f1_fake": 0.8696,
-    "accuracy": 0.8763,
-    "recall_fake": 0.8333
+    "epocas": 3,
+    "lr": 2e-05,
+    "f1_macro": 0.8864,
+    "f1_fake": 0.8817,
+    "accuracy": 0.8866,
+    "recall_fake": 0.8542,
+    "rol": "produccion"
   },
   "mroberta_E0": {
     "modelo": "BSC-LT/mRoBERTa",
     "escenario": "E0",
+    "epocas": 5,
+    "lr": 2e-05,
     "f1_macro": 0.8443,
     "f1_fake": 0.8315,
     "accuracy": 0.8454,
-    "recall_fake": 0.7708
+    "recall_fake": 0.7708,
+    "rol": "comparativo"
   },
   "mroberta_E1": {
     "modelo": "BSC-LT/mRoBERTa",
     "escenario": "E1",
+    "epocas": 5,
+    "lr": 2e-05,
     "f1_macro": 0.8336,
     "f1_fake": 0.8182,
     "accuracy": 0.8351,
-    "recall_fake": 0.75
+    "recall_fake": 0.75,
+    "rol": "comparativo"
   }
 }
