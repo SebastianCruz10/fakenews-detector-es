@@ -1,31 +1,26 @@
-"""
-routers/predict.py — Endpoint de clasificación de noticias.
-
-Responsabilidades:
-- Recibir texto plano o URL de noticia
-- Delegar en ClassifierService para obtener etiqueta y probabilidades
-- Devolver: label (REAL/FAKE), confidence score, y probabilidades por clase
-"""
-
-from fastapi import APIRouter
-
-# from app.services.classifier import ClassifierService
-# from app.models.schemas import PredictRequest, PredictResponse
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+from app.services.classifier import classifier_service, MODELOS
 
 router = APIRouter()
 
 
-# @router.post("/", response_model=PredictResponse)
-# async def predict(request: PredictRequest):
-#     """
-#     Clasifica una noticia como REAL o FAKE.
-#
-#     Body:
-#         text (str): texto de la noticia (mínimo 20 caracteres)
-#         url  (str, opcional): URL para extracción automática del contenido
-#
-#     Returns:
-#         PredictResponse con label, confidence y probabilidades
-#     """
-#     result = await ClassifierService.predict(request.text)
-#     return result
+class PredictRequest(BaseModel):
+    text: str
+    model_id: str = "mrbert-es_E1"
+
+
+class PredictResponse(BaseModel):
+    label: str
+    confidence: float
+    probabilities: dict
+    model_id: str
+
+
+@router.post("/predict", response_model=PredictResponse)
+async def predict(request: PredictRequest):
+    if request.model_id not in MODELOS:
+        raise HTTPException(status_code=400, detail=f"model_id inválido: {request.model_id}")
+    if classifier_service.active_model_id != request.model_id:
+        classifier_service.load_model(request.model_id)
+    return classifier_service.predict(request.text)

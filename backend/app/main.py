@@ -1,27 +1,33 @@
-"""
-main.py — FastAPI application entry point.
+from dotenv import load_dotenv
+load_dotenv()
 
-Responsabilidades:
-- Crear y configurar la instancia de FastAPI
-- Registrar todos los routers (predict, explain, extract, model_info)
-- Configurar CORS para permitir peticiones desde el frontend React
-- Definir el evento de startup para cargar el modelo en memoria
-- Exponer el endpoint raíz de health-check
-"""
+import logging
+from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# from app.routers import predict, explain, extract, model_info
+from app.routers import predict, explain, extract, model_info
+from app.services.classifier import classifier_service
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Startup: cargando modelo de producción mrbert-es_E1")
+    classifier_service.load_model("mrbert-es_E1")
+    yield
+
 
 app = FastAPI(
-    title="Fake News Detector ES",
-    description="API de detección de fake news en español con explicabilidad SHAP/LIME",
-    version="0.1.0",
+    title="FakeDetector ES API",
+    version="1.0.0",
+    lifespan=lifespan,
 )
 
-# --- CORS ---
-# TODO: restringir origins a la URL del frontend en producción
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -30,22 +36,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- Routers ---
-# app.include_router(predict.router, prefix="/api/predict", tags=["Predicción"])
-# app.include_router(explain.router, prefix="/api/explain", tags=["Explicabilidad"])
-# app.include_router(extract.router, prefix="/api/extract", tags=["Extracción"])
-# app.include_router(model_info.router, prefix="/api/model", tags=["Modelo"])
+app.include_router(predict.router,    prefix="/api", tags=["Predicción"])
+app.include_router(explain.router,    prefix="/api", tags=["Explicabilidad"])
+app.include_router(extract.router,    prefix="/api", tags=["Extracción"])
+app.include_router(model_info.router, prefix="/api", tags=["Modelo"])
 
 
 @app.get("/", tags=["Health"])
 async def root():
-    """Health-check endpoint."""
-    return {"status": "ok", "service": "fakenews-detector-es"}
+    return {"status": "ok", "version": "1.0.0"}
 
 
-# --- Startup event ---
-# @app.on_event("startup")
-# async def load_model():
-#     """Carga el modelo Transformer fine-tuned al iniciar el servidor."""
-#     from app.services.classifier import ClassifierService
-#     ClassifierService.load()
+@app.get("/health", tags=["Health"])
+async def health():
+    return {
+        "status": "ok",
+        "modelo_activo": classifier_service.active_model_id,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }

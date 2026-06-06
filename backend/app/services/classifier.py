@@ -1,60 +1,68 @@
-"""
-services/classifier.py — Servicio de clasificación con modelo Transformer.
+import os
+import logging
+import torch
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
-Responsabilidades:
-- Cargar el modelo fine-tuned desde /models (AutoModelForSequenceClassification)
-- Mantener el modelo en memoria como singleton durante la vida del servidor
-- Tokenizar el texto de entrada con el tokenizer correspondiente
-- Ejecutar la inferencia y devolver label + probabilidades softmax
-- Truncar entradas largas al max_length del modelo (512 tokens para BERT-base)
-"""
+logger = logging.getLogger(__name__)
 
-# from transformers import AutoTokenizer, AutoModelForSequenceClassification
-# import torch
-# from pathlib import Path
-
-MODEL_DIR = "models/"  # ruta relativa a la raíz del proyecto
+MODELOS = {
+    "mrbert-es_E1": "SebastianCruz10/fakenews-mrbert-es-E1",
+    "mrbert-es_E0": "SebastianCruz10/fakenews-mrbert-es-E0",
+    "mroberta_E0":  "SebastianCruz10/fakenews-mroberta-E0",
+    "mroberta_E1":  "SebastianCruz10/fakenews-mroberta-E1",
+}
 
 
 class ClassifierService:
-    _model = None
-    _tokenizer = None
-    _id2label = {0: "REAL", 1: "FAKE"}
+    def __init__(self):
+        self._tokenizer = None
+        self._model = None
+        self._active_model_id: str | None = None
+        self._device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    @classmethod
-    def load(cls):
-        """Carga tokenizer y modelo desde MODEL_DIR. Llamar en startup."""
-        # cls._tokenizer = AutoTokenizer.from_pretrained(MODEL_DIR)
-        # cls._model = AutoModelForSequenceClassification.from_pretrained(MODEL_DIR)
-        # cls._model.eval()
-        pass
+    def load_model(self, model_id: str) -> None:
+        hf_repo = MODELOS[model_id]
+        token = os.getenv("HF_TOKEN")
+        logger.info("Cargando modelo %s desde %s", model_id, hf_repo)
+        self._tokenizer = AutoTokenizer.from_pretrained(
+            hf_repo,
+            token=token,
+            trust_remote_code=True,
+            use_fast=False
+        )
+        self._model = AutoModelForSequenceClassification.from_pretrained(
+            hf_repo, token=token
+        ).to(self._device)
+        self._model.eval()
+        self._active_model_id = model_id
+        logger.info("Modelo %s cargado en %s", model_id, self._device)
 
-    @classmethod
-    async def predict(cls, text: str) -> dict:
-        """
-        Clasifica el texto.
+    def predict(self, text: str) -> dict:
+        inputs = self._tokenizer(
+            text,
+            return_tensors="pt",
+            truncation=True,
+            max_length=512,
+            padding=True,
+        ).to(self._device)
+        with torch.no_grad():
+            logits = self._model(**inputs).logits
+        probs = torch.softmax(logits, dim=-1).squeeze()
+        label_id = int(torch.argmax(logits))
+        label = "FALSA" if label_id == 1 else "REAL"
+        return {
+            "label": label,
+            "confidence": round(float(probs[label_id]), 4),
+            "probabilities": {
+                "real": round(float(probs[0]), 4),
+                "fake": round(float(probs[1]), 4),
+            },
+            "model_id": self._active_model_id,
+        }
 
-        Returns:
-            {label: str, confidence: float, probabilities: {REAL: float, FAKE: float}}
-        """
-        # inputs = cls._tokenizer(text, return_tensors="pt", truncation=True, max_length=512)
-        # with torch.no_grad():
-        #     logits = cls._model(**inputs).logits
-        # probs = torch.softmax(logits, dim=-1).squeeze().tolist()
-        # label_id = int(torch.argmax(logits))
-        # return {
-        #     "label": cls._id2label[label_id],
-        #     "confidence": round(probs[label_id], 4),
-        #     "probabilities": {cls._id2label[i]: round(p, 4) for i, p in enumerate(probs)},
-        # }
-        raise NotImplementedError
+    @property
+    def active_model_id(self) -> str | None:
+        return self._active_model_id
 
-    @classmethod
-    def get_info(cls) -> dict:
-        """Devuelve metadatos del modelo activo."""
-        # return {
-        #     "model_name": cls._model.config._name_or_path,
-        #     "base_architecture": cls._model.config.model_type,
-        #     "status": "ready" if cls._model is not None else "not_loaded",
-        # }
-        raise NotImplementedError
+
+classifier_service = ClassifierService()

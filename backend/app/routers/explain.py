@@ -1,32 +1,32 @@
-"""
-routers/explain.py — Endpoint de explicabilidad (SHAP / atención).
-
-Responsabilidades:
-- Recibir texto ya clasificado
-- Delegar en ExplainerService para calcular valores SHAP o pesos de atención
-- Devolver lista de tokens con su contribución (positiva/negativa) a la predicción
-- Opcionalmente devolver HTML con highlighting listo para el frontend
-"""
-
-from fastapi import APIRouter
-
-# from app.services.explainer import ExplainerService
-# from app.models.schemas import ExplainRequest, ExplainResponse
+from typing import List
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+from app.services.classifier import classifier_service, MODELOS
+from app.services.explainer import explainer_service
 
 router = APIRouter()
 
 
-# @router.post("/", response_model=ExplainResponse)
-# async def explain(request: ExplainRequest):
-#     """
-#     Genera explicación token-level para una predicción.
-#
-#     Body:
-#         text  (str): mismo texto enviado a /predict
-#         label (str): label devuelto por /predict (para anclar la clase explicada)
-#
-#     Returns:
-#         ExplainResponse con lista de {token, shap_value} y html_highlight
-#     """
-#     result = await ExplainerService.explain(request.text, request.label)
-#     return result
+class ExplainRequest(BaseModel):
+    text: str
+    model_id: str = "mrbert-es_E1"
+
+
+class TokenShap(BaseModel):
+    token: str
+    shap_value: float
+    position: int
+
+
+class ExplainResponse(BaseModel):
+    tokens: List[TokenShap]
+
+
+@router.post("/explain", response_model=ExplainResponse)
+async def explain(request: ExplainRequest):
+    if request.model_id not in MODELOS:
+        raise HTTPException(status_code=400, detail=f"model_id inválido: {request.model_id}")
+    if classifier_service.active_model_id != request.model_id:
+        classifier_service.load_model(request.model_id)
+    tokens = explainer_service.explain(request.text, classifier_service)
+    return {"tokens": tokens}
