@@ -24,6 +24,7 @@ export default function App() {
     addToHistory,
     clearHistory,
     setActiveModel,
+    updateLastEntryShap,
   } = useSession()
 
   // ── Estado elevado de Analizar (persiste entre cambios de pestaña) ──
@@ -32,6 +33,28 @@ export default function App() {
   const [analizarResultado,  setAnalizarResultado]  = useState(null)
   const [analizarShapTokens, setAnalizarShapTokens] = useState(null)
   const [analizarError,      setAnalizarError]      = useState(null)
+
+  // Actualiza los tokens SHAP de la entrada más reciente del historial
+  function handleUpdateShapInHistory(shapTokens) {
+    updateLastEntryShap(shapTokens)
+  }
+
+  // Restaura el estado de Analizar con una entrada del historial y navega a esa pestaña
+  function handleSelectEntry(entry) {
+    setAnalizarInputText(entry.text)
+    setAnalizarInputMode('texto')
+    setAnalizarResultado({
+      label: entry.label,
+      confidence: entry.confidence,
+      probabilities: entry.probabilities,
+      model_id: entry.model_id,
+      _analyzedText: entry.text,
+    })
+    // Restaurar tokens SHAP si los tiene; null si el array está vacío (permite recargar)
+    setAnalizarShapTokens(entry.shap_tokens?.length > 0 ? entry.shap_tokens : null)
+    setAnalizarError(null)
+    setActiveTab('analizar')
+  }
 
   // Renderiza la página correspondiente al tab activo
   function renderPage() {
@@ -51,6 +74,7 @@ export default function App() {
             setShapTokens={setAnalizarShapTokens}
             error={analizarError}
             setError={setAnalizarError}
+            onUpdateShapInHistory={handleUpdateShapInHistory}
           />
         )
       case 'comparativa':
@@ -60,6 +84,7 @@ export default function App() {
           <Historial
             history={history}
             onClearHistory={clearHistory}
+            onSelectEntry={handleSelectEntry}
           />
         )
       case 'modelo':

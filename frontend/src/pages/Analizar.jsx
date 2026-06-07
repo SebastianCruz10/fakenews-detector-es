@@ -18,6 +18,7 @@ import { predict as apiPredict, explain as apiExplain, extract as apiExtract } f
 export default function Analizar({
   activeModel,
   onAddToHistory,
+  onUpdateShapInHistory,
   inputText,    setInputText,
   inputMode,    setInputMode,
   resultado,    setResultado,
@@ -121,7 +122,10 @@ export default function Analizar({
     setShapLoading(true)
     try {
       const data = await apiExplain(resultado._analyzedText, activeModel)
-      setShapTokens(data.tokens || [])
+      const tokens = data.tokens || []
+      setShapTokens(tokens)
+      // Persistir los tokens SHAP en la entrada del historial correspondiente
+      onUpdateShapInHistory(tokens)
     } catch {
       setShapTokens([])
     } finally {

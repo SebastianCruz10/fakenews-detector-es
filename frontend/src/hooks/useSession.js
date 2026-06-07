@@ -31,6 +31,18 @@ export function useSession() {
   }
 
   /**
+   * Actualiza los shap_tokens de la entrada más reciente del historial.
+   * Las entradas se prependen, por lo que history[0] es siempre la más reciente.
+   */
+  function updateLastEntryShap(shapTokens) {
+    setHistory(prev => {
+      if (prev.length === 0) return prev
+      const [first, ...rest] = prev
+      return [{ ...first, shap_tokens: shapTokens }, ...rest]
+    })
+  }
+
+  /**
    * Elimina todas las entradas del historial de sesión.
    */
   function clearHistory() {
@@ -43,5 +55,6 @@ export function useSession() {
     addToHistory,
     clearHistory,
     setActiveModel,
+    updateLastEntryShap,
   }
 }

@@ -3,8 +3,9 @@
  * Props:
  *   history          - array: lista de predicciones realizadas en la sesión
  *   onClearHistory   - function: callback para limpiar el historial
+ *   onSelectEntry    - function: callback que recibe una entrada al hacer clic en su fila
  */
-export default function Historial({ history, onClearHistory }) {
+export default function Historial({ history, onClearHistory, onSelectEntry }) {
   return (
     <main className="max-w-5xl mx-auto px-4 py-10">
 
@@ -23,6 +24,7 @@ export default function Historial({ history, onClearHistory }) {
       </div>
       <p className="text-gray-600 mb-8 text-sm">
         Predicciones realizadas durante esta sesión. El historial se borra al cerrar el navegador.
+        Haz clic en una fila para volver a verla en el Analizador.
       </p>
 
       {/* Estado vacío */}
@@ -55,15 +57,16 @@ export default function Historial({ history, onClearHistory }) {
                   Confianza
                 </th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-700">Modelo</th>
+                <th className="text-center px-4 py-3 font-semibold text-gray-700">Ver</th>
               </tr>
             </thead>
             <tbody>
               {history.map((entrada, idx) => (
                 <tr
                   key={entrada.id}
-                  className={`border-b border-gray-100 ${
-                    idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                  }`}
+                  onClick={() => onSelectEntry(entrada)}
+                  className={`border-b border-gray-100 cursor-pointer transition-colors
+                    hover:bg-blue-50 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
                 >
                   {/* Hora */}
                   <td className="px-4 py-3 font-mono text-xs text-gray-500 whitespace-nowrap">
@@ -100,6 +103,24 @@ export default function Historial({ history, onClearHistory }) {
                   {/* ID del modelo */}
                   <td className="px-4 py-3 text-gray-500 font-mono text-xs">
                     {entrada.model_id}
+                  </td>
+
+                  {/* Columna Ver: ícono de ojo */}
+                  <td className="px-4 py-3 text-center">
+                    <svg
+                      className="w-4 h-4 mx-auto text-blue-400 hover:text-blue-600 transition-colors"
+                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                      <path
+                        strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943
+                           9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                      />
+                    </svg>
                   </td>
                 </tr>
               ))}
