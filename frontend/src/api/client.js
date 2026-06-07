@@ -1,0 +1,83 @@
+// Cliente API para comunicarse con el backend FastAPI
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
+/**
+ * Analiza un texto y retorna la predicción de veracidad.
+ * Respuesta: { label, confidence, probabilities: { real, fake }, model_id }
+ */
+export async function predict(text, modelId) {
+  try {
+    const response = await fetch(`${BASE_URL}/api/predict`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, model_id: modelId }),
+    })
+    if (!response.ok) {
+      const err = await response.json()
+      throw new Error(err.detail || `Error ${response.status}`)
+    }
+    return await response.json()
+  } catch (error) {
+    throw error
+  }
+}
+
+/**
+ * Obtiene la explicación SHAP de una predicción.
+ * Respuesta: { tokens: [{ token, shap_value, position }] }
+ */
+export async function explain(text, modelId) {
+  try {
+    const response = await fetch(`${BASE_URL}/api/explain`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, model_id: modelId }),
+    })
+    if (!response.ok) {
+      const err = await response.json()
+      throw new Error(err.detail || `Error ${response.status}`)
+    }
+    return await response.json()
+  } catch (error) {
+    throw error
+  }
+}
+
+/**
+ * Extrae el texto de una URL de artículo periodístico.
+ * Respuesta: { text, detected_lang, is_spanish, char_count, word_count }
+ */
+export async function extract(url) {
+  try {
+    const response = await fetch(`${BASE_URL}/api/extract`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    })
+    if (!response.ok) {
+      const err = await response.json()
+      throw new Error(err.detail || `Error ${response.status}`)
+    }
+    return await response.json()
+  } catch (error) {
+    throw error
+  }
+}
+
+/**
+ * Obtiene información y métricas del modelo especificado.
+ * Respuesta: { model_id, hf_repo, escenario, arquitectura, f1_fake,
+ *              f1_macro, accuracy, recall_fake, corpus, is_active }
+ */
+export async function getModelInfo(modelId) {
+  try {
+    const response = await fetch(`${BASE_URL}/api/model-info?model_id=${modelId}`)
+    if (!response.ok) {
+      const err = await response.json()
+      throw new Error(err.detail || `Error ${response.status}`)
+    }
+    return await response.json()
+  } catch (error) {
+    throw error
+  }
+}

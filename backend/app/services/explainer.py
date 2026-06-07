@@ -75,7 +75,15 @@ class ExplainerService:
             # index 1 = FAKE class
             tokens = shap_values[0].data
             values = shap_values[0].values[:, 1]
-            top_indices = np.argsort(np.abs(values))[::-1][:20]
+            # Filtrar subpalabras (##), tokens de un solo carácter y tokens
+            # sin ninguna letra antes de ordenar por SHAP absoluto
+            valid_indices = [
+                i for i, tok in enumerate(tokens)
+                if not str(tok).startswith("##")
+                and len(str(tok).strip()) > 1
+                and any(c.isalpha() for c in str(tok))
+            ]
+            top_indices = sorted(valid_indices, key=lambda i: abs(values[i]), reverse=True)[:20]
             return [
                 {
                     "token": str(tokens[i]),
