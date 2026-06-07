@@ -1,5 +1,5 @@
 // Cliente API para comunicarse con el backend FastAPI
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://sebastiancruz10-fakenews-detector-es.hf.space'
 
 /**
  * Analiza un texto y retorna la predicción de veracidad.
