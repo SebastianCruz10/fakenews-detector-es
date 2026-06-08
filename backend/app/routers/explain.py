@@ -28,5 +28,7 @@ async def explain(request: ExplainRequest):
         raise HTTPException(status_code=400, detail=f"model_id inválido: {request.model_id}")
     if classifier_service.active_model_id != request.model_id:
         classifier_service.load_model(request.model_id)
-    tokens = explainer_service.explain(request.text, classifier_service)
+    palabras = request.text.split()
+    texto_shap = " ".join(palabras[:300]) if len(palabras) > 300 else request.text
+    tokens = explainer_service.explain(texto_shap, classifier_service)
     return {"tokens": tokens}
