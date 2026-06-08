@@ -29,6 +29,6 @@ async def explain(request: ExplainRequest):
     if classifier_service.active_model_id != request.model_id:
         classifier_service.load_model(request.model_id)
     palabras = request.text.split()
-    texto_shap = " ".join(palabras[:300]) if len(palabras) > 300 else request.text
+    texto_shap = " ".join(palabras[:100]) if len(palabras) > 100 else request.text
     tokens = explainer_service.explain(texto_shap, classifier_service)
     return {"tokens": tokens}
