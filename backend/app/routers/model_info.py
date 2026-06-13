@@ -1,22 +1,23 @@
+import json
+import logging
+from pathlib import Path
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+
 from app.services.classifier import classifier_service, MODELOS
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
-_METRICAS = {
-    "mrbert-es_E1": {"f1_fake": 0.8817, "f1_macro": 0.8864, "accuracy": 0.8866, "recall_fake": 0.8542},
-    "mrbert-es_E0": {"f1_fake": 0.8571, "f1_macro": 0.8655, "accuracy": 0.8660, "recall_fake": 0.8125},
-    "mroberta_E0":  {"f1_fake": 0.8315, "f1_macro": 0.8443, "accuracy": 0.8454, "recall_fake": 0.7708},
-    "mroberta_E1":  {"f1_fake": 0.8182, "f1_macro": 0.8336, "accuracy": 0.8351, "recall_fake": 0.7500},
-}
+# Cargado una sola vez al importar el módulo; falla en startup si el archivo no existe
+_JSON_PATH = Path(__file__).parent.parent / "data" / "resultados_finetune.json"
 
-_INFO = {
-    "mrbert-es_E1": {"arquitectura": "MrBERT-es", "escenario": "E1", "corpus": "FakeDeS + augmentación sintética E1"},
-    "mrbert-es_E0": {"arquitectura": "MrBERT-es", "escenario": "E0", "corpus": "FakeDeS E0"},
-    "mroberta_E0":  {"arquitectura": "mRoBERTa",  "escenario": "E0", "corpus": "FakeDeS E0"},
-    "mroberta_E1":  {"arquitectura": "mRoBERTa",  "escenario": "E1", "corpus": "FakeDeS + augmentación sintética E1"},
-}
+try:
+    _MODELO_DATA: dict = json.loads(_JSON_PATH.read_text(encoding="utf-8"))
+except Exception as exc:
+    logger.error("No se pudo cargar %s: %s", _JSON_PATH, exc)
+    _MODELO_DATA = {}
 
 
 class ModelInfoResponse(BaseModel):
@@ -36,17 +37,18 @@ class ModelInfoResponse(BaseModel):
 async def model_info(model_id: str = "mrbert-es_E1"):
     if model_id not in MODELOS:
         raise HTTPException(status_code=400, detail=f"model_id inválido: {model_id}")
-    m = _METRICAS[model_id]
-    info = _INFO[model_id]
+    if model_id not in _MODELO_DATA:
+        raise HTTPException(status_code=500, detail=f"Métricas no disponibles para {model_id}")
+    data = _MODELO_DATA[model_id]
     return {
         "model_id": model_id,
         "hf_repo": MODELOS[model_id],
-        "escenario": info["escenario"],
-        "arquitectura": info["arquitectura"],
-        "f1_fake": m["f1_fake"],
-        "f1_macro": m["f1_macro"],
-        "accuracy": m["accuracy"],
-        "recall_fake": m["recall_fake"],
-        "corpus": info["corpus"],
+        "escenario": data["escenario"],
+        "arquitectura": data["arquitectura"],
+        "f1_fake": data["f1_fake"],
+        "f1_macro": data["f1_macro"],
+        "accuracy": data["accuracy"],
+        "recall_fake": data["recall_fake"],
+        "corpus": data["corpus"],
         "is_active": classifier_service.active_model_id == model_id,
     }

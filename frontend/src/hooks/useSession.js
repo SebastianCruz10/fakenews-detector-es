@@ -1,20 +1,44 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+
+const KEY_HISTORY = 'fnd_history'
+const KEY_MODEL   = 'fnd_active_model'
+
+function readJson(key, fallback) {
+  try {
+    const raw = sessionStorage.getItem(key)
+    return raw ? JSON.parse(raw) : fallback
+  } catch {
+    return fallback
+  }
+}
 
 /**
  * Hook personalizado para manejar el estado de sesión.
- * El historial vive solo en memoria (useState) y se pierde al cerrar el navegador.
+ * El historial y el modelo activo se persisten en sessionStorage:
+ * sobreviven a un F5 pero se limpian al cerrar la pestaña.
  */
 export function useSession() {
-  const [history, setHistory] = useState([])
-  const [activeModel, setActiveModel] = useState('mrbert-es_E1')
+  const [history, setHistory] = useState(() => readJson(KEY_HISTORY, []))
+  const [activeModel, setActiveModel] = useState(
+    () => {
+      try { return sessionStorage.getItem(KEY_MODEL) || 'mrbert-es_E1' }
+      catch { return 'mrbert-es_E1' }
+    }
+  )
 
-  /**
-   * Agrega una predicción al inicio del historial.
-   * Estructura de entry: { text, label, confidence, probabilities, model_id, shap_tokens }
-   */
-  function addToHistory(entry) {
+  // Sincronizar historial con sessionStorage cada vez que cambia
+  useEffect(() => {
+    try { sessionStorage.setItem(KEY_HISTORY, JSON.stringify(history)) } catch {}
+  }, [history])
+
+  // Sincronizar modelo activo con sessionStorage cada vez que cambia
+  useEffect(() => {
+    try { sessionStorage.setItem(KEY_MODEL, activeModel) } catch {}
+  }, [activeModel])
+
+  const addToHistory = useCallback((entry) => {
     const newEntry = {
-      id: Date.now(),
+      id: entry.id ?? Date.now(),
       timestamp: new Date().toLocaleTimeString('es-ES', {
         hour: '2-digit',
         minute: '2-digit',
@@ -28,26 +52,19 @@ export function useSession() {
       shap_tokens: entry.shap_tokens || [],
     }
     setHistory(prev => [newEntry, ...prev])
-  }
+  }, [])
 
-  /**
-   * Actualiza los shap_tokens de la entrada más reciente del historial.
-   * Las entradas se prependen, por lo que history[0] es siempre la más reciente.
-   */
-  function updateLastEntryShap(shapTokens) {
-    setHistory(prev => {
-      if (prev.length === 0) return prev
-      const [first, ...rest] = prev
-      return [{ ...first, shap_tokens: shapTokens }, ...rest]
-    })
-  }
+  const updateEntryShap = useCallback((entryId, shapTokens) => {
+    setHistory(prev =>
+      prev.map(entry =>
+        entry.id === entryId ? { ...entry, shap_tokens: shapTokens } : entry
+      )
+    )
+  }, [])
 
-  /**
-   * Elimina todas las entradas del historial de sesión.
-   */
-  function clearHistory() {
+  const clearHistory = useCallback(() => {
     setHistory([])
-  }
+  }, [])
 
   return {
     history,
@@ -55,6 +72,6 @@ export function useSession() {
     addToHistory,
     clearHistory,
     setActiveModel,
-    updateLastEntryShap,
+    updateEntryShap,
   }
 }

@@ -1,5 +1,8 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useSession } from './hooks/useSession'
+import { useAnalizarState } from './hooks/useAnalizarState'
+import { useBackendStatus } from './hooks/useBackendStatus'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import Analizar from './pages/Analizar'
@@ -17,6 +20,7 @@ import Modelo from './pages/Modelo'
  */
 export default function App() {
   const [activeTab, setActiveTab] = useState('analizar')
+  const backendStatus = useBackendStatus()
 
   const {
     history,
@@ -24,37 +28,33 @@ export default function App() {
     addToHistory,
     clearHistory,
     setActiveModel,
-    updateLastEntryShap,
+    updateEntryShap,
   } = useSession()
 
   // ── Estado elevado de Analizar (persiste entre cambios de pestaña) ──
-  const [analizarInputText,  setAnalizarInputText]  = useState('')
-  const [analizarInputMode,  setAnalizarInputMode]  = useState('texto')
-  const [analizarResultado,  setAnalizarResultado]  = useState(null)
-  const [analizarShapTokens, setAnalizarShapTokens] = useState(null)
-  const [analizarError,      setAnalizarError]      = useState(null)
+  const [analizarState, setAnalizar] = useAnalizarState()
 
-  // Actualiza los tokens SHAP de la entrada más reciente del historial
-  function handleUpdateShapInHistory(shapTokens) {
-    updateLastEntryShap(shapTokens)
-  }
+  // Estable gracias a useCallback en useSession; deps vacías porque updateEntryShap no cambia
+  const handleUpdateShapInHistory = useCallback((entryId, shapTokens) => {
+    updateEntryShap(entryId, shapTokens)
+  }, [updateEntryShap])
 
-  // Restaura el estado de Analizar con una entrada del historial y navega a esa pestaña
-  function handleSelectEntry(entry) {
-    setAnalizarInputText(entry.text)
-    setAnalizarInputMode('texto')
-    setAnalizarResultado({
-      label: entry.label,
-      confidence: entry.confidence,
-      probabilities: entry.probabilities,
-      model_id: entry.model_id,
-      _analyzedText: entry.text,
+  // Restauración atómica: un solo dispatch → un solo re-render
+  const handleSelectEntry = useCallback((entry) => {
+    setAnalizar.restoreFromHistory({
+      inputText: entry.text,
+      resultado: {
+        label:         entry.label,
+        confidence:    entry.confidence,
+        probabilities: entry.probabilities,
+        model_id:      entry.model_id,
+        _analyzedText: entry.text,
+        _entryId:      entry.id,
+      },
+      shapTokens: entry.shap_tokens?.length > 0 ? entry.shap_tokens : null,
     })
-    // Restaurar tokens SHAP si los tiene; null si el array está vacío (permite recargar)
-    setAnalizarShapTokens(entry.shap_tokens?.length > 0 ? entry.shap_tokens : null)
-    setAnalizarError(null)
     setActiveTab('analizar')
-  }
+  }, [setAnalizar])
 
   // Renderiza la página correspondiente al tab activo
   function renderPage() {
@@ -64,17 +64,9 @@ export default function App() {
           <Analizar
             activeModel={activeModel}
             onAddToHistory={addToHistory}
-            inputText={analizarInputText}
-            setInputText={setAnalizarInputText}
-            inputMode={analizarInputMode}
-            setInputMode={setAnalizarInputMode}
-            resultado={analizarResultado}
-            setResultado={setAnalizarResultado}
-            shapTokens={analizarShapTokens}
-            setShapTokens={setAnalizarShapTokens}
-            error={analizarError}
-            setError={setAnalizarError}
             onUpdateShapInHistory={handleUpdateShapInHistory}
+            state={analizarState}
+            set={setAnalizar}
           />
         )
       case 'comparativa':
@@ -106,8 +98,30 @@ export default function App() {
         onTabChange={setActiveTab}
         activeModel={activeModel}
       />
+
+      {/* Banner de cold start — visible hasta que el backend confirme modelo cargado */}
+      {backendStatus !== 'ready' && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2.5">
+          <div className="max-w-5xl mx-auto flex items-center gap-3 text-sm text-amber-800">
+            <svg className="w-4 h-4 flex-shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10"
+                stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor"
+                d="M4 12a8 8 0 018-8v8H4z" />
+            </svg>
+            <span>
+              {backendStatus === 'checking'
+                ? 'Verificando disponibilidad del servidor…'
+                : 'El servidor está iniciando. En el primer acceso puede tardar entre 3 y 8 minutos. La página se actualizará automáticamente cuando esté listo.'}
+            </span>
+          </div>
+        </div>
+      )}
+
       <div className="flex-1">
-        {renderPage()}
+        <ErrorBoundary key={activeTab}>
+          {renderPage()}
+        </ErrorBoundary>
       </div>
       <Footer />
     </div>

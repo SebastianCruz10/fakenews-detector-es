@@ -1,14 +1,15 @@
 from typing import List
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel, Field
 from app.services.classifier import classifier_service, MODELOS
 from app.services.explainer import explainer_service
+from app.limiter import limiter
 
 router = APIRouter()
 
 
 class ExplainRequest(BaseModel):
-    text: str
+    text: str = Field(min_length=50)
     model_id: str = "mrbert-es_E1"
 
 
@@ -23,7 +24,8 @@ class ExplainResponse(BaseModel):
 
 
 @router.post("/explain", response_model=ExplainResponse)
-async def explain(request: ExplainRequest):
+@limiter.limit("10/minute")
+async def explain(http_request: Request, request: ExplainRequest):
     if request.model_id not in MODELOS:
         raise HTTPException(status_code=400, detail=f"model_id inválido: {request.model_id}")
     if classifier_service.active_model_id != request.model_id:

@@ -23,8 +23,8 @@ export default function Historial({ history, onClearHistory, onSelectEntry }) {
         )}
       </div>
       <p className="text-gray-600 mb-8 text-sm">
-        Predicciones realizadas durante esta sesión. El historial se borra al cerrar el navegador.
-        Haz clic en una fila para volver a verla en el Analizador.
+        Predicciones realizadas durante esta sesión. El historial persiste si recargás la página,
+        pero se borra al cerrar la pestaña. Haz clic en una fila para volver a verla en el Analizador.
       </p>
 
       {/* Estado vacío */}

@@ -1,46 +1,6 @@
-/**
- * Página de comparativa de rendimiento entre modelos E0 y E1.
- * Métricas hardcodeadas con los resultados reales del proyecto.
- */
+import { MODELOS_LIST } from '../data/modelos'
 
-const METRICAS = [
-  {
-    id: 'mrbert-es_E1',
-    nombre: 'MrBERT-es · E1',
-    accuracy: 0.8866,
-    f1_macro: 0.8864,
-    f1_fake: 0.8817,
-    recall_fake: 0.8542,
-    mejor: true,
-  },
-  {
-    id: 'mrbert-es_E0',
-    nombre: 'MrBERT-es · E0',
-    accuracy: 0.8660,
-    f1_macro: 0.8655,
-    f1_fake: 0.8571,
-    recall_fake: 0.8125,
-    mejor: false,
-  },
-  {
-    id: 'mroberta_E0',
-    nombre: 'mRoBERTa · E0',
-    accuracy: 0.8454,
-    f1_macro: 0.8443,
-    f1_fake: 0.8315,
-    recall_fake: 0.7708,
-    mejor: false,
-  },
-  {
-    id: 'mroberta_E1',
-    nombre: 'mRoBERTa · E1',
-    accuracy: 0.8351,
-    f1_macro: 0.8336,
-    f1_fake: 0.8182,
-    recall_fake: 0.7500,
-    mejor: false,
-  },
-]
+const METRICAS = MODELOS_LIST
 
 // Convierte un decimal a porcentaje con 2 decimales: 0.8866 → "88.66%"
 function pct(val) {

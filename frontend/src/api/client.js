@@ -1,5 +1,5 @@
 // Cliente API para comunicarse con el backend FastAPI
-const BASE_URL = import.meta.env.VITE_API_URL || 'https://sebastiancruz10-fakenews-detector-es.hf.space'
+export const BASE_URL = import.meta.env.VITE_API_URL || 'https://sebastiancruz10-fakenews-detector-es.hf.space'
 
 /**
  * Analiza un texto y retorna la predicción de veracidad.
@@ -36,8 +36,11 @@ export async function explain(text, modelId, signal) {
       signal,
     })
     if (!response.ok) {
+      if (response.status === 429) {
+        throw new Error('Demasiadas solicitudes. Esperá un momento antes de pedir otra explicación.')
+      }
       const err = await response.json()
-      throw new Error(err.detail || `Error ${response.status}`)
+      throw new Error(err.detail || err.error || `Error ${response.status}`)
     }
     return await response.json()
   } catch (error) {
@@ -65,6 +68,16 @@ export async function extract(url, signal) {
   } catch (error) {
     throw error
   }
+}
+
+/**
+ * Verifica si el backend está activo y el modelo está cargado.
+ * Respuesta: { status, modelo_activo, timestamp }
+ */
+export async function healthCheck(signal) {
+  const response = await fetch(`${BASE_URL}/health`, { signal })
+  if (!response.ok) throw new Error(`HTTP ${response.status}`)
+  return response.json()
 }
 
 /**

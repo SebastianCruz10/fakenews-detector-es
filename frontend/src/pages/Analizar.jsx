@@ -4,36 +4,41 @@ import { predict as apiPredict, explain as apiExplain, extract as apiExtract } f
 /**
  * Página principal de análisis de noticias en español.
  *
- * Props elevadas desde App.jsx (persisten entre cambios de pestaña):
- *   inputText    / setInputText   - texto ingresado en modo directo
- *   inputMode    / setInputMode   - 'texto' | 'url'
- *   resultado    / setResultado   - objeto de predicción (o null)
- *   shapTokens   / setShapTokens  - array de tokens SHAP (o null)
- *   error        / setError       - mensaje de error (o null)
+ * Props de estado (gestionado por useAnalizarState en App.jsx):
+ *   state - objeto con todos los campos del estado de Analizar
+ *   set   - objeto con un setter por campo + restoreFromHistory
  *
  * Props de sesión:
- *   activeModel     - string: modelo activo seleccionado
- *   onAddToHistory  - function: callback para guardar en el historial
+ *   activeModel           - string: modelo activo seleccionado
+ *   onAddToHistory        - function: guarda predicción en el historial
+ *   onUpdateShapInHistory - function(entryId, tokens): actualiza shap_tokens por ID
  */
 export default function Analizar({
   activeModel,
   onAddToHistory,
   onUpdateShapInHistory,
-  inputText,    setInputText,
-  inputMode,    setInputMode,
-  resultado,    setResultado,
-  shapTokens,   setShapTokens,
-  error,        setError,
+  state,
+  set,
 }) {
   // AbortController activo; se cancela al iniciar un nuevo análisis o cambiar de modo
   const abortRef = useRef(null)
 
-  // Estado local: no necesita persistir entre pestañas
-  const [inputUrl,          setInputUrl]          = useState('')
-  const [loading,           setLoading]           = useState(false)
-  const [warningNoEspanol,  setWarningNoEspanol]  = useState(false)
-  const [shapExpanded,      setShapExpanded]      = useState(false)
-  const [shapLoading,       setShapLoading]       = useState(false)
+  // inputUrl es genuinamente local: no tiene sentido persistir una URL entre pestañas
+  const [inputUrl, setInputUrl] = useState('')
+
+  // Desestructurar estado y setters con los mismos nombres que usaban los props anteriores
+  const { inputText, inputMode, resultado, shapTokens, error, loading, shapLoading, shapExpanded, warningNoEspanol } = state
+  const {
+    inputText:        setInputText,
+    inputMode:        setInputMode,
+    resultado:        setResultado,
+    shapTokens:       setShapTokens,
+    error:            setError,
+    loading:          setLoading,
+    shapLoading:      setShapLoading,
+    shapExpanded:     setShapExpanded,
+    warningNoEspanol: setWarningNoEspanol,
+  } = set
 
   // Validación del campo activo
   const esUrlValida =
@@ -46,6 +51,7 @@ export default function Analizar({
   function handleModeChange(nuevoModo) {
     abortRef.current?.abort()
     setInputMode(nuevoModo)
+    setInputUrl('')
     setError(null)
     setWarningNoEspanol(false)
     setResultado(null)
@@ -97,11 +103,15 @@ export default function Analizar({
       // Llamar al endpoint de predicción
       const prediccion = await apiPredict(texto, activeModel, controller.signal)
 
-      // Guardar resultado elevado; se incluye _analyzedText para la llamada SHAP
-      setResultado({ ...prediccion, _analyzedText: texto })
+      // Generar el ID aquí para compartirlo entre resultado y el entry del historial
+      const entryId = Date.now()
+
+      // Guardar resultado elevado; _entryId vincula con la entrada del historial
+      setResultado({ ...prediccion, _analyzedText: texto, _entryId: entryId })
 
       // Registrar en el historial de sesión
       onAddToHistory({
+        id: entryId,
         text: texto,
         label: prediccion.label,
         confidence: prediccion.confidence,
@@ -119,6 +129,9 @@ export default function Analizar({
 
   // Cargar y mostrar/ocultar la explicación SHAP
   async function handleVerExplicacion() {
+    // Ignorar clics mientras hay una carga en curso
+    if (shapLoading) return
+
     // Colapsar si ya está expandido
     if (shapExpanded) {
       setShapExpanded(false)
@@ -139,7 +152,7 @@ export default function Analizar({
       const tokens = data.tokens || []
       setShapTokens(tokens)
       // Persistir los tokens SHAP en la entrada del historial correspondiente
-      onUpdateShapInHistory(tokens)
+      onUpdateShapInHistory(resultado._entryId, tokens)
     } catch (err) {
       if (err.name === 'AbortError') return
       setShapTokens([])
@@ -394,7 +407,8 @@ export default function Analizar({
                     <p className="text-xs text-gray-500 mb-4">
                       Tokens más influyentes en la predicción (máx. 20).{' '}
                       <span className="text-red-600 font-medium">Rojo</span>: impulsa hacia FALSA ·{' '}
-                      <span className="text-green-600 font-medium">Verde</span>: impulsa hacia REAL
+                      <span className="text-green-600 font-medium">Verde</span>: impulsa hacia REAL.{' '}
+                      La explicación se calcula sobre las primeras 100 palabras del texto.
                     </p>
                     <div className="space-y-2">
                       {shapTokens.slice(0, 20).map((token, i) => {

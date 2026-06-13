@@ -1,0 +1,38 @@
+{
+  "mrbert-es_E1": {
+    "arquitectura": "MrBERT-es",
+    "escenario": "E1",
+    "corpus": "FakeDeS + augmentación sintética E1",
+    "f1_fake": 0.8817,
+    "f1_macro": 0.8864,
+    "accuracy": 0.8866,
+    "recall_fake": 0.8542
+  },
+  "mrbert-es_E0": {
+    "arquitectura": "MrBERT-es",
+    "escenario": "E0",
+    "corpus": "FakeDeS E0",
+    "f1_fake": 0.8571,
+    "f1_macro": 0.8655,
+    "accuracy": 0.8660,
+    "recall_fake": 0.8125
+  },
+  "mroberta_E0": {
+    "arquitectura": "mRoBERTa",
+    "escenario": "E0",
+    "corpus": "FakeDeS E0",
+    "f1_fake": 0.8315,
+    "f1_macro": 0.8443,
+    "accuracy": 0.8454,
+    "recall_fake": 0.7708
+  },
+  "mroberta_E1": {
+    "arquitectura": "mRoBERTa",
+    "escenario": "E1",
+    "corpus": "FakeDeS + augmentación sintética E1",
+    "f1_fake": 0.8182,
+    "f1_macro": 0.8336,
+    "accuracy": 0.8351,
+    "recall_fake": 0.7500
+  }
+}

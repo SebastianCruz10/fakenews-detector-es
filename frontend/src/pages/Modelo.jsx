@@ -1,47 +1,7 @@
 import ModelSelector from '../components/ModelSelector'
+import { MODELOS_DATA } from '../data/modelos'
 
-/**
- * Página de información del modelo activo con selector y métricas detalladas.
- * Props:
- *   activeModel   - string: ID del modelo activo
- *   onModelChange - function: callback para cambiar el modelo activo
- */
-
-// Datos completos de cada modelo (métricas reales del proyecto)
-const INFO_MODELOS = {
-  'mrbert-es_E1': {
-    nombre: 'MrBERT-es · E1',
-    descripcion: 'Modelo principal optimizado con augmentación sintética (+50% clase fake)',
-    accuracy: 0.8866,
-    f1_macro: 0.8864,
-    f1_fake: 0.8817,
-    recall_fake: 0.8542,
-  },
-  'mrbert-es_E0': {
-    nombre: 'MrBERT-es · E0',
-    descripcion: 'Modelo principal baseline entrenado sin augmentación',
-    accuracy: 0.8660,
-    f1_macro: 0.8655,
-    f1_fake: 0.8571,
-    recall_fake: 0.8125,
-  },
-  mroberta_E0: {
-    nombre: 'mRoBERTa · E0',
-    descripcion: 'Modelo comparativo multilingüe baseline',
-    accuracy: 0.8454,
-    f1_macro: 0.8443,
-    f1_fake: 0.8315,
-    recall_fake: 0.7708,
-  },
-  mroberta_E1: {
-    nombre: 'mRoBERTa · E1',
-    descripcion: 'Modelo comparativo multilingüe con augmentación sintética',
-    accuracy: 0.8351,
-    f1_macro: 0.8336,
-    f1_fake: 0.8182,
-    recall_fake: 0.7500,
-  },
-}
+const INFO_MODELOS = MODELOS_DATA
 
 // Convierte decimal a porcentaje: 0.8866 → "88.66%"
 function pct(val) {

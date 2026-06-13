@@ -1,12 +1,12 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from app.services.classifier import classifier_service, MODELOS
 
 router = APIRouter()
 
 
 class PredictRequest(BaseModel):
-    text: str
+    text: str = Field(min_length=50)
     model_id: str = "mrbert-es_E1"
 
 
