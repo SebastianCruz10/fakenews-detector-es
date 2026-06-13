@@ -5,12 +5,13 @@ const BASE_URL = import.meta.env.VITE_API_URL || 'https://sebastiancruz10-fakene
  * Analiza un texto y retorna la predicción de veracidad.
  * Respuesta: { label, confidence, probabilities: { real, fake }, model_id }
  */
-export async function predict(text, modelId) {
+export async function predict(text, modelId, signal) {
   try {
     const response = await fetch(`${BASE_URL}/api/predict`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text, model_id: modelId }),
+      signal,
     })
     if (!response.ok) {
       const err = await response.json()
@@ -26,12 +27,13 @@ export async function predict(text, modelId) {
  * Obtiene la explicación SHAP de una predicción.
  * Respuesta: { tokens: [{ token, shap_value, position }] }
  */
-export async function explain(text, modelId) {
+export async function explain(text, modelId, signal) {
   try {
     const response = await fetch(`${BASE_URL}/api/explain`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text, model_id: modelId }),
+      signal,
     })
     if (!response.ok) {
       const err = await response.json()
@@ -47,12 +49,13 @@ export async function explain(text, modelId) {
  * Extrae el texto de una URL de artículo periodístico.
  * Respuesta: { text, detected_lang, is_spanish, char_count, word_count }
  */
-export async function extract(url) {
+export async function extract(url, signal) {
   try {
     const response = await fetch(`${BASE_URL}/api/extract`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url }),
+      signal,
     })
     if (!response.ok) {
       const err = await response.json()

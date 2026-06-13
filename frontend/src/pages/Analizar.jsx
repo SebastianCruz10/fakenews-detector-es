@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { predict as apiPredict, explain as apiExplain, extract as apiExtract } from '../api/client'
 
 /**
@@ -25,6 +25,9 @@ export default function Analizar({
   shapTokens,   setShapTokens,
   error,        setError,
 }) {
+  // AbortController activo; se cancela al iniciar un nuevo análisis o cambiar de modo
+  const abortRef = useRef(null)
+
   // Estado local: no necesita persistir entre pestañas
   const [inputUrl,          setInputUrl]          = useState('')
   const [loading,           setLoading]           = useState(false)
@@ -39,8 +42,9 @@ export default function Analizar({
     !loading &&
     (inputMode === 'texto' ? inputText.trim().length >= 50 : esUrlValida)
 
-  // Cambiar de modo limpia alertas y resultado
+  // Cambiar de modo cancela cualquier llamada en vuelo y limpia alertas y resultado
   function handleModeChange(nuevoModo) {
+    abortRef.current?.abort()
     setInputMode(nuevoModo)
     setError(null)
     setWarningNoEspanol(false)
@@ -51,6 +55,10 @@ export default function Analizar({
 
   // Flujo principal de análisis
   async function handleAnalizar() {
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
     setLoading(true)
     setError(null)
     setWarningNoEspanol(false)
@@ -65,8 +73,9 @@ export default function Analizar({
         // Extraer texto del artículo
         let extracted
         try {
-          extracted = await apiExtract(inputUrl.trim())
-        } catch {
+          extracted = await apiExtract(inputUrl.trim(), controller.signal)
+        } catch (e) {
+          if (e.name === 'AbortError') throw e
           setError(
             'No se pudo extraer el contenido de la URL. Verifica que sea accesible y apunte a un artículo en español.'
           )
@@ -86,7 +95,7 @@ export default function Analizar({
       }
 
       // Llamar al endpoint de predicción
-      const prediccion = await apiPredict(texto, activeModel)
+      const prediccion = await apiPredict(texto, activeModel, controller.signal)
 
       // Guardar resultado elevado; se incluye _analyzedText para la llamada SHAP
       setResultado({ ...prediccion, _analyzedText: texto })
@@ -101,6 +110,7 @@ export default function Analizar({
         shap_tokens: [],
       })
     } catch (err) {
+      if (err.name === 'AbortError') return
       setError(err.message || 'Error al analizar el texto. Inténtalo de nuevo.')
     } finally {
       setLoading(false)
@@ -119,14 +129,19 @@ export default function Analizar({
     // No recargar si ya están los datos
     if (shapTokens !== null) return
 
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
     setShapLoading(true)
     try {
-      const data = await apiExplain(resultado._analyzedText, activeModel)
+      const data = await apiExplain(resultado._analyzedText, activeModel, controller.signal)
       const tokens = data.tokens || []
       setShapTokens(tokens)
       // Persistir los tokens SHAP en la entrada del historial correspondiente
       onUpdateShapInHistory(tokens)
-    } catch {
+    } catch (err) {
+      if (err.name === 'AbortError') return
       setShapTokens([])
     } finally {
       setShapLoading(false)
