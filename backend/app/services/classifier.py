@@ -28,7 +28,6 @@ class ClassifierService:
             hf_repo,
             token=token,
             trust_remote_code=True,
-            use_fast=False
         )
         self._model = AutoModelForSequenceClassification.from_pretrained(
             hf_repo, token=token
