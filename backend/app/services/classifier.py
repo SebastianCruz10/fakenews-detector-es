@@ -1,7 +1,7 @@
 import os
 import logging
 import torch
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from transformers import AutoModelForSequenceClassification, PreTrainedTokenizerFast
 
 logger = logging.getLogger(__name__)
 
@@ -24,10 +24,11 @@ class ClassifierService:
         hf_repo = MODELOS[model_id]
         token = os.getenv("HF_TOKEN")
         logger.info("Cargando modelo %s desde %s", model_id, hf_repo)
-        self._tokenizer = AutoTokenizer.from_pretrained(
+        # AutoTokenizer falla con tokenizer_class=TokenizersBackend (inválido en transformers).
+        # PreTrainedTokenizerFast lee tokenizer.json directamente sin verificar esa clave.
+        self._tokenizer = PreTrainedTokenizerFast.from_pretrained(
             hf_repo,
             token=token,
-            trust_remote_code=True,
         )
         self._model = AutoModelForSequenceClassification.from_pretrained(
             hf_repo, token=token
