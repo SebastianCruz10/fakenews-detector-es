@@ -25,12 +25,12 @@ class ExplainResponse(BaseModel):
 
 @router.post("/explain", response_model=ExplainResponse)
 @limiter.limit("10/minute")
-async def explain(http_request: Request, request: ExplainRequest):
-    if request.model_id not in MODELOS:
-        raise HTTPException(status_code=400, detail=f"model_id inválido: {request.model_id}")
-    if classifier_service.active_model_id != request.model_id:
-        classifier_service.load_model(request.model_id)
-    palabras = request.text.split()
-    texto_shap = " ".join(palabras[:100]) if len(palabras) > 100 else request.text
+async def explain(request: Request, body: ExplainRequest):
+    if body.model_id not in MODELOS:
+        raise HTTPException(status_code=400, detail=f"model_id inválido: {body.model_id}")
+    if classifier_service.active_model_id != body.model_id:
+        classifier_service.load_model(body.model_id)
+    palabras = body.text.split()
+    texto_shap = " ".join(palabras[:100]) if len(palabras) > 100 else body.text
     tokens = explainer_service.explain(texto_shap, classifier_service)
     return {"tokens": tokens}
