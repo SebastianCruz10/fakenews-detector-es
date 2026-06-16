@@ -23,6 +23,11 @@ export default function Analizar({
   // AbortController activo; se cancela al iniciar un nuevo análisis o cambiar de modo
   const abortRef = useRef(null)
 
+  // Siempre refleja el _entryId del resultado visible; actualizado en cada render.
+  // Permite que funciones async detecten si el usuario navegó a otra entrada mientras esperaban.
+  const activeEntryIdRef = useRef(null)
+  activeEntryIdRef.current = resultado?._entryId ?? null
+
   // inputUrl es genuinamente local: no tiene sentido persistir una URL entre pestañas
   const [inputUrl, setInputUrl] = useState('')
 
@@ -146,13 +151,16 @@ export default function Analizar({
     const controller = new AbortController()
     abortRef.current = controller
 
+    const myEntryId = resultado._entryId
+
     setShapLoading(true)
     try {
       const data = await apiExplain(resultado._analyzedText, activeModel, controller.signal)
       const tokens = data.tokens || []
+      // Si el usuario navegó a otra entrada mientras esperábamos, descartar resultado
+      if (activeEntryIdRef.current !== myEntryId) return
       setShapTokens(tokens)
-      // Persistir los tokens SHAP en la entrada del historial correspondiente
-      onUpdateShapInHistory(resultado._entryId, tokens)
+      onUpdateShapInHistory(myEntryId, tokens)
     } catch (err) {
       if (err.name === 'AbortError') return
       setShapTokens([])
