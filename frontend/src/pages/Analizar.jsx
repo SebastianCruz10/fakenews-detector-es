@@ -144,8 +144,8 @@ export default function Analizar({
     }
     setShapExpanded(true)
 
-    // No recargar si ya están los datos
-    if (shapTokens !== null) return
+    // No recargar si ya están los datos cargados correctamente
+    if (shapTokens !== null && shapTokens.length > 0) return
 
     abortRef.current?.abort()
     const controller = new AbortController()
@@ -402,13 +402,18 @@ export default function Analizar({
               <div className="p-5 bg-white">
                 {shapLoading ? (
                   <div className="flex items-center gap-2 text-sm text-gray-500 py-2">
-                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10"
                         stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor"
                         d="M4 12a8 8 0 018-8v8H4z" />
                     </svg>
-                    Calculando explicación SHAP...
+                    <span>
+                      Calculando explicación SHAP…{' '}
+                      <span className="text-gray-400">
+                        (puede tardar hasta 2 minutos la primera vez)
+                      </span>
+                    </span>
                   </div>
                 ) : shapTokens && shapTokens.length > 0 ? (
                   <>
@@ -452,9 +457,13 @@ export default function Analizar({
                     </div>
                   </>
                 ) : (
-                  <p className="text-sm text-gray-500 py-2">
-                    No se pudo obtener la explicación SHAP.
-                  </p>
+                  <div className="text-sm text-gray-500 py-2">
+                    <p>El cálculo tardó demasiado o falló.</p>
+                    <p className="text-xs mt-1 text-gray-400">
+                      El servidor puede haber completado el cálculo en segundo plano.
+                      Hacé clic en "Ver explicación" de nuevo para intentarlo.
+                    </p>
+                  </div>
                 )}
               </div>
             )}
