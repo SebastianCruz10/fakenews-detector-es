@@ -140,7 +140,7 @@ export default function Comparativa() {
           Predicción en tiempo real — todos los modelos
         </h2>
         <p className="text-sm text-gray-500 mb-4">
-          Ingresa un texto y compará la predicción de los 4 modelos simultáneamente.
+          Ingresa un texto y compara la predicción de los 4 modelos simultáneamente.
         </p>
 
         {/* Selector de modo */}
