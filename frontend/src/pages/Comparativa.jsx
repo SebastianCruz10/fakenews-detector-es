@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { MODELOS_LIST } from '../data/modelos'
-import { predict as apiPredict } from '../api/client'
+import { predict as apiPredict, extract as apiExtract } from '../api/client'
 
 const METRICAS = MODELOS_LIST
 
@@ -13,21 +13,50 @@ function pct(val) {
 }
 
 export default function Comparativa() {
+  const [modo, setModo]           = useState('texto')
   const [texto, setTexto]         = useState('')
+  const [inputUrl, setInputUrl]   = useState('')
   const [loading, setLoading]     = useState(false)
   const [resultados, setResultados] = useState(null)
   const [error, setError]         = useState(null)
+  const [warningNoEspanol, setWarningNoEspanol] = useState(false)
 
-  const wordCount = texto.trim() ? texto.trim().split(/\s+/).length : 0
-  const canCompare = !loading && texto.trim().length >= 50
+  const wordCount  = texto.trim() ? texto.trim().split(/\s+/).length : 0
+  const esUrlValida = inputUrl.trim().startsWith('http://') || inputUrl.trim().startsWith('https://')
+  const canCompare = !loading && (modo === 'texto' ? texto.trim().length >= 50 : esUrlValida)
+
+  function handleModoChange(nuevoModo) {
+    setModo(nuevoModo)
+    setError(null)
+    setWarningNoEspanol(false)
+    setResultados(null)
+  }
 
   async function handleComparar() {
     setLoading(true)
     setError(null)
+    setWarningNoEspanol(false)
     setResultados(null)
     try {
+      let textoFinal = texto
+
+      if (modo === 'url') {
+        let extracted
+        try {
+          extracted = await apiExtract(inputUrl.trim())
+        } catch (e) {
+          setError('No se pudo extraer el contenido de la URL. Verifica que sea accesible y apunte a un artículo en español.')
+          return
+        }
+        if (!extracted.is_spanish) {
+          setWarningNoEspanol(true)
+          return
+        }
+        textoFinal = extracted.text
+      }
+
       const predicciones = await Promise.all(
-        GRID_MODELOS.map(modelId => apiPredict(texto, modelId))
+        GRID_MODELOS.map(modelId => apiPredict(textoFinal, modelId))
       )
       const map = {}
       GRID_MODELOS.forEach((id, i) => { map[id] = predicciones[i] })
@@ -114,27 +143,64 @@ export default function Comparativa() {
           Ingresa un texto y compará la predicción de los 4 modelos simultáneamente.
         </p>
 
-        <textarea
-          className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm
-                     text-gray-800 resize-y focus:outline-none focus:ring-2
-                     focus:ring-blue-500 focus:border-transparent placeholder-gray-400"
-          rows={5}
-          placeholder="Pega aquí el texto de la noticia a analizar..."
-          value={texto}
-          onChange={e => setTexto(e.target.value)}
-        />
-        <div className="flex justify-between items-center mt-1 mb-4">
-          <span className={`text-xs ${wordCount > 0 && wordCount < 80 ? 'text-orange-500' : 'text-gray-400'}`}>
-            {wordCount > 0 && wordCount < 80
-              ? `Para mejores resultados, ingresa al menos 80 palabras (${wordCount} actuales).`
-              : wordCount > 0 ? `${wordCount} palabras` : ''}
-          </span>
-          <span className={`text-xs ${texto.length > 0 && texto.trim().length < 50 ? 'text-orange-500' : 'text-gray-400'}`}>
-            {texto.length > 0 && texto.trim().length < 50
-              ? `Mínimo 50 caracteres (${texto.trim().length}/50)`
-              : `${texto.length} caracteres`}
-          </span>
+        {/* Selector de modo */}
+        <div className="flex gap-1 bg-gray-100 rounded-lg p-1 mb-4 w-fit">
+          {[
+            { id: 'texto', label: 'Texto Directo' },
+            { id: 'url',   label: 'Enlace (URL)'  },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => handleModoChange(tab.id)}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                modo === tab.id
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
+
+        {/* Input según modo */}
+        {modo === 'texto' ? (
+          <>
+            <textarea
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm
+                         text-gray-800 resize-y focus:outline-none focus:ring-2
+                         focus:ring-blue-500 focus:border-transparent placeholder-gray-400"
+              rows={5}
+              placeholder="Pega aquí el texto de la noticia a analizar..."
+              value={texto}
+              onChange={e => setTexto(e.target.value)}
+            />
+            <div className="flex justify-between items-center mt-1 mb-4">
+              <span className={`text-xs ${wordCount > 0 && wordCount < 80 ? 'text-orange-500' : 'text-gray-400'}`}>
+                {wordCount > 0 && wordCount < 80
+                  ? `Para mejores resultados, ingresa al menos 80 palabras (${wordCount} actuales).`
+                  : wordCount > 0 ? `${wordCount} palabras` : ''}
+              </span>
+              <span className={`text-xs ${texto.length > 0 && texto.trim().length < 50 ? 'text-orange-500' : 'text-gray-400'}`}>
+                {texto.length > 0 && texto.trim().length < 50
+                  ? `Mínimo 50 caracteres (${texto.trim().length}/50)`
+                  : `${texto.length} caracteres`}
+              </span>
+            </div>
+          </>
+        ) : (
+          <div className="mb-4">
+            <input
+              type="url"
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm
+                         text-gray-800 focus:outline-none focus:ring-2
+                         focus:ring-blue-500 focus:border-transparent placeholder-gray-400"
+              placeholder="https://ejemplo.com/noticia"
+              value={inputUrl}
+              onChange={e => setInputUrl(e.target.value)}
+            />
+          </div>
+        )}
 
         <button
           onClick={handleComparar}
@@ -164,6 +230,19 @@ export default function Comparativa() {
             </>
           )}
         </button>
+
+        {/* Alerta: contenido no en español */}
+        {warningNoEspanol && (
+          <div className="mt-4 flex items-start gap-3 bg-orange-50 border border-orange-200
+                          rounded-lg p-4 text-sm text-orange-700">
+            <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none"
+              stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+            </svg>
+            El texto no está en español. El sistema acepta únicamente contenido en español.
+          </div>
+        )}
 
         {/* Error */}
         {error && (
