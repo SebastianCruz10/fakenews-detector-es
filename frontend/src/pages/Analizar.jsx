@@ -20,18 +20,8 @@ export default function Analizar({
   state,
   set,
 }) {
-  // AbortController activo; se cancela al iniciar un nuevo análisis o cambiar de modo
-  const abortRef = useRef(null)
-
-  // Siempre refleja el _entryId del resultado visible; actualizado en cada render.
-  // Permite que funciones async detecten si el usuario navegó a otra entrada mientras esperaban.
-  const activeEntryIdRef = useRef(null)
-  activeEntryIdRef.current = resultado?._entryId ?? null
-
-  // inputUrl es genuinamente local: no tiene sentido persistir una URL entre pestañas
-  const [inputUrl, setInputUrl] = useState('')
-
-  // Desestructurar estado y setters con los mismos nombres que usaban los props anteriores
+  // Desestructurar estado y setters antes de cualquier uso de esas variables
+  // (evita TDZ en el build de producción cuando el minifier renombra las const)
   const { inputText, inputMode, resultado, shapTokens, error, loading, shapLoading, shapExpanded, warningNoEspanol } = state
   const {
     inputText:        setInputText,
@@ -44,6 +34,17 @@ export default function Analizar({
     shapExpanded:     setShapExpanded,
     warningNoEspanol: setWarningNoEspanol,
   } = set
+
+  // AbortController activo; se cancela al iniciar un nuevo análisis o cambiar de modo
+  const abortRef = useRef(null)
+
+  // Siempre refleja el _entryId del resultado visible; actualizado en cada render.
+  // Permite que funciones async detecten si el usuario navegó a otra entrada mientras esperaban.
+  const activeEntryIdRef = useRef(null)
+  activeEntryIdRef.current = resultado?._entryId ?? null
+
+  // inputUrl es genuinamente local: no tiene sentido persistir una URL entre pestañas
+  const [inputUrl, setInputUrl] = useState('')
 
   // Validación del campo activo
   const esUrlValida =
