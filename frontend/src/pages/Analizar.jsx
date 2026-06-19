@@ -224,7 +224,6 @@ export default function Analizar({
                          text-gray-800 resize-y focus:outline-none focus:ring-2
                          focus:ring-blue-500 focus:border-transparent placeholder-gray-400"
               rows={6}
-              maxLength={5000}
               placeholder="Ingrese aquí el texto de la noticia..."
               value={inputText}
               onChange={e => setInputText(e.target.value)}
@@ -246,7 +245,7 @@ export default function Analizar({
               >
                 {inputText.length > 0 && inputText.trim().length < 50
                   ? `Mínimo 50 caracteres (${inputText.trim().length}/50)`
-                  : `${wordCount} pal · ${inputText.length}/5000`}
+                  : `${wordCount} palabras · ${inputText.length} caracteres`}
               </span>
             </div>
           </>
