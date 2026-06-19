@@ -51,6 +51,7 @@ export default function Analizar({
   const canSubmit =
     !loading &&
     (inputMode === 'texto' ? inputText.trim().length >= 50 : esUrlValida)
+  const wordCount = inputText.trim() ? inputText.trim().split(/\s+/).length : 0
 
   // Cambiar de modo cancela cualquier llamada en vuelo y limpia alertas y resultado
   function handleModeChange(nuevoModo) {
@@ -228,9 +229,16 @@ export default function Analizar({
               value={inputText}
               onChange={e => setInputText(e.target.value)}
             />
-            <div className="mt-1 text-right">
+            <div className="mt-1 flex justify-between items-start gap-2">
+              {wordCount > 0 && wordCount < 80 ? (
+                <span className="text-xs text-orange-500">
+                  Para mejores resultados, ingresa al menos 80 palabras ({wordCount} actuales).
+                </span>
+              ) : (
+                <span />
+              )}
               <span
-                className={`text-xs ${
+                className={`text-xs flex-shrink-0 ${
                   inputText.length > 0 && inputText.trim().length < 50
                     ? 'text-orange-500'
                     : 'text-gray-400'
@@ -238,7 +246,7 @@ export default function Analizar({
               >
                 {inputText.length > 0 && inputText.trim().length < 50
                   ? `Mínimo 50 caracteres (${inputText.trim().length}/50)`
-                  : `${inputText.length} / 5000`}
+                  : `${wordCount} pal · ${inputText.length}/5000`}
               </span>
             </div>
           </>
